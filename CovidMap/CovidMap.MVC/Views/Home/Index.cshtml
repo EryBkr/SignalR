@@ -1,0 +1,79 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div id="myChart" style="width: 100%; height: 700px"></div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+
+    @*Google Charts*@
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    @*SignalR Library*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aspnet-signalr/1.0.27/signalr.js" integrity="sha512-RnZfhh4QUtg97mSlY5mFfp/yqJpEUBmAUU6JI3xrOWshmw9CJB4ejsd7YTB15JmUWMHMB7s4NrqueF+zrskEtQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        $(document).ready(() => {
+
+            var covidChartList = new Array();
+            //ChartJS içerisinde ki dizimin ilk satırını ve label kısmını doldurdum
+            covidChartList.push(["Tarih", "İstanul", "Ankara", "İzmir", "Canakkale", "Antalya"]);
+
+            //Socket Connection
+            var connection = new signalR.HubConnectionBuilder().withUrl("https://localhost:44372/MyHub").build();
+
+            connection.start().then(() => {
+
+                //Server daki metodu tetikledik
+                connection.invoke("GetCovidList");
+
+            }).catch((err) => {
+                alert(`Hata Mesajı: ${err}`);
+            });
+
+            //Serverdaki GetCovidList metodunun tetiklenmesinden sonra tetiklenecek metodumuz
+            connection.on("ReceiveCovidList", (covidList) => {
+
+                //Dizinin ilk datası hariç(label) hepsini sil.Baştan yüklendiği zaman üzerine eklemesin
+                covidChartList = covidChartList.splice(0, 1);
+
+                //Serverdan client tetiklemisiyle gelen datalarımdan bir dizi oluşturdum
+                covidList.forEach((item) => {
+                    covidChartList.push([item.date, item.totalIstanbulVariant, item.totalAnkaraVariant, item.totalIzmirVariant, item.totalCanakkaleVariant, item.totalAntalyaVariant]);
+                });
+
+                console.log(covidChartList);
+                console.log(covidList);
+
+                google.charts.load('current', { 'packages': ['corechart'] });
+                google.charts.setOnLoadCallback(drawChart);
+            });
+
+
+           
+
+            function drawChart() {
+                //Oluşan diziyi parametre olarak verdim
+                var data = google.visualization.arrayToDataTable(covidChartList);
+
+                var options = {
+                    title: 'Covid 19 Chart',
+                    curveType: 'function',
+                    legend: { position: 'bottom' }
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('myChart'));
+
+                chart.draw(data, options);
+            }
+
+        });
+    </script>
+}

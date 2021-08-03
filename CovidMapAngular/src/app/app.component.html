@@ -1,0 +1,14 @@
+
+<router-outlet></router-outlet>
+
+<!-- TS tarafında dataları ve ayarları oluşturup buraya veriyoruz -->
+<google-chart
+  [title]="'Covid 19 Chart'"
+  [type]="'LineChart'"
+  [data]="covidService.covidChartList"
+  [columns]="coloumnNames"
+  [options]="options"
+  [width]="1000"
+  [height]="600"
+>
+</google-chart>
